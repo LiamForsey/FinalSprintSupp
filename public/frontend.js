@@ -5,7 +5,11 @@ const socket = new WebSocket('ws://localhost:3000/ws');
 socket.addEventListener('message', (event) => {
     const data = JSON.parse(event.data);
 
-    //TODO: Handle the events from the socket
+    if (data.type === 'voteUpdate') {
+        onIncomingVote(data);
+    } else if (data.type === 'newPoll') {
+        onNewPollAdded(data);
+    }
 });
 
 

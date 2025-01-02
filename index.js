@@ -28,9 +28,21 @@ app.use(session({
 }));
 let connectedClients = [];
 
+
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+});
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = User; 
+
+
 //Note: Not all routes you need are present here, some are missing and you'll need to add them yourself.
 
-// mongoose
 
 // Setting up websocket for voting updates:
 
@@ -59,15 +71,16 @@ app.ws('/ws', (socket, request) => {
 });
 
 
-// Home Page - Landing Page for unauthenticated users:
 
+
+// Home Page - Landing Page for unauthenticated users
 app.get('/', async (request, response) => {
     if (request.session.user?.id) {
         return response.redirect('/dashboard');
     }
-
-    response.render('index/unauthenticatedIndex', {});
+    response.render('index/unauthenticatedIndex'); // Ensure the path and file name are correct here
 });
+
 
 
 // route for logging in users
@@ -123,8 +136,10 @@ app.get('/dashboard', async (request, response) => {
     }
 
     const polls = await Poll.find();
-
-    response.render('index/authenticatedIndex', { polls });
+    if (polls.length === 0) {
+        return response.render('index/authenticatedIndex', { polls: [] });
+    }
+    
 
     //TODO: Fix the polls, this should contain all polls that are active. I'd recommend taking a look at the
     //authenticatedIndex template to see how it expects polls to be represented
@@ -197,10 +212,9 @@ async function onCreateNewPoll(question, pollOptions) {
         const newPoll = new Poll({
             question,
             options: pollOptions,
-            createdBy: request.session.user._id, // Link the poll to the logged-in user
-        });
-
-       
+            createdBy: req.session.user._id, // Use 'req' directly here
+         });
+         
         await newPoll.save();
 
         
@@ -216,7 +230,7 @@ async function onCreateNewPoll(question, pollOptions) {
 }
 
 
-
+// mongoose
 mongoose.connect(MONGO_URI).then(() => {
     console.log('Connected to MongoDB');
     app.listen(PORT, () => {

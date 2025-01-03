@@ -1,0 +1,17 @@
+<header>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <% if (loggedIn) { %> <!-- Checks if the user is logged in using loggedIn variable -->
+                <li>
+                    <form action="/logout" method="post" style="display: inline;">
+                        <button type="submit">Logout</button>
+                    </form>
+                </li>
+            <% } else { %> <!-- Shows Log In and Sign Up if no user -->
+                <li><a href="/login">Log In</a></li>
+                <li><a href="/signup">Sign Up</a></li>
+            <% } %>
+        </ul>
+    </nav>
+</header>

@@ -5,6 +5,9 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const User = require('./models/User'); 
+const Poll = require('./models/Poll');
+
+
 
 const PORT = 3000;
 const MONGO_URI = 'mongodb+srv://Liam:Diesel13@cluster0.ic4nl.mongodb.net/';
@@ -92,7 +95,7 @@ app.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, foundUser.password);
         if (match) {
             req.session.user = { id: foundUser.id, username: foundUser.username };
-            return res.redirect('index/authenticatedIndex');  
+            return res.redirect('/dashboard');  
         }
 
         return res.status(401).send('Invalid password');
@@ -105,7 +108,7 @@ app.post('/login', async (req, res) => {
 // Route for user signup
 app.get('/signup', async (req, res) => {
     if (req.session.user?.id) {
-        return res.redirect('index/authenticatedIndex');  // Redirect authenticated users
+        return res.redirect('authenticatedIndex');  // Redirect authenticated users
     }
     return res.render('signup', { errorMessage: null });
 });
@@ -118,18 +121,27 @@ app.post('/signup', async (req, res) => {
 
     req.session.user = { id: newUser.id, username: newUser.username };  // Set session
 
-    return res.redirect('index/authenticatedIndex');  // Redirect after signup
+    return res.redirect('/dashboard');  // Redirect after signup
 });
+
 
 // Dashboard route (only accessible to logged-in users)
 app.get('/dashboard', async (req, res) => {
+    console.log("Checking if user is logged in..."); // Debugging line
     if (!req.session.user?.id) {
         return res.redirect('/login');  // Ensure user is logged in
     }
 
-    const polls = await Poll.find(); // Assuming Poll is a valid model
-    return res.render('index/authenticatedIndex', { polls: polls.length ? polls : [] });
+    try {
+        const polls = await Poll.find(); // Correct model usage
+        console.log("Dashboard polls:", polls);  // Debugging line
+        return res.render('index/authenticatedIndex', { polls: polls.length ? polls : [] });
+    } catch (error) {
+        console.error("Error fetching polls:", error);
+        return res.status(500).send('An error occurred while fetching polls');
+    }
 });
+
 
 // Profile route
 app.get('/profile', async (req, res) => {

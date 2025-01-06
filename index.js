@@ -16,7 +16,7 @@ const app = express();
 expressWs(app);  
 
 // Connect to MongoDB
-mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(MONGO_URI,)
   .then(() => {
     
     app.listen(PORT, () => {
@@ -40,8 +40,9 @@ app.use(session({
 
 let connectedClients = [];
 
+
 // WebSocket for voting updates
-app.ws('/ws', (socket, request) => {
+app.ws('/ws', (socket) => {  
     connectedClients.push(socket);
 
     socket.on('message', async (message) => {
@@ -108,7 +109,7 @@ app.post('/login', async (req, res) => {
 // Route for user signup
 app.get('/signup', async (req, res) => {
     if (req.session.user?.id) {
-        return res.redirect('authenticatedIndex');  // Redirect authenticated users
+        return res.redirect('authenticatedIndex');  
     }
     return res.render('signup', { errorMessage: null });
 });
@@ -119,22 +120,22 @@ app.post('/signup', async (req, res) => {
     const newUser = new User({ username, password });
     await newUser.save();
 
-    req.session.user = { id: newUser.id, username: newUser.username };  // Set session
+    req.session.user = { id: newUser.id, username: newUser.username };  
 
-    return res.redirect('/dashboard');  // Redirect after signup
+    return res.redirect('/dashboard');  
 });
 
 
 // Dashboard route (only accessible to logged-in users)
 app.get('/dashboard', async (req, res) => {
-    console.log("Checking if user is logged in..."); // Debugging line
+    console.log("Checking if user is logged in..."); 
     if (!req.session.user?.id) {
-        return res.redirect('/login');  // Ensure user is logged in
+        return res.redirect('/login');  
     }
 
     try {
-        const polls = await Poll.find(); // Correct model usage
-        console.log("Dashboard polls:", polls);  // Debugging line
+        const polls = await Poll.find(); 
+        console.log("Dashboard polls:", polls);  
         return res.render('index/authenticatedIndex', { polls: polls.length ? polls : [] });
     } catch (error) {
         console.error("Error fetching polls:", error);
@@ -156,7 +157,7 @@ app.get('/profile', async (req, res) => {
 // Create a new poll
 app.get('/createPoll', (req, res) => {
     if (!req.session.user?.id) {
-        return res.redirect('/login');  // Redirect to login if not authenticated
+        return res.redirect('/login');  
     }
     return res.render('createPoll');
 });
@@ -173,6 +174,7 @@ app.post('/createPoll', async (req, res) => {
             createdBy: req.session.user.id,
         });
         await poll.save();
+        console.log("Updated Poll:", poll);
 
         return res.redirect('/dashboard');
     } catch (error) {
@@ -187,49 +189,3 @@ app.get('/logout', (req, res) => {
         res.redirect('/');
     });
 });
-
-/**
- * Handles creating a new poll, based on the data provided to the server
- * 
- * @param {string} question The question the poll is asking
- * @param {[answer: string, votes: number]} pollOptions The various answers the poll allows and how many votes each answer should start with
- * @returns {string?} An error message if an error occurs, or null if no error occurs.
- */
-
-
-
-async function onCreateNewPoll(question, pollOptions) {
-    try {
-        // Create a new poll document
-        const newPoll = new Poll({
-            question,
-            options: pollOptions,
-            createdBy: req.session.user._id, // Use 'req' directly here
-         });
-         
-        await newPoll.save();
-
-        
-        connectedClients.forEach(client => {
-            client.send(JSON.stringify({ type: 'newPoll', poll: newPoll }));
-        });
-
-        return null; 
-    } catch (error) {
-        console.error('Error creating poll:', error);
-        return 'Error creating the poll, please try again'; // error message if something goes wrong
-    }
-}
-
-
-/**
- * Handles processing a new vote on a poll
- * 
- * This function isn't necessary and should be removed if it's not used, but it's left as a hint to try and help give
- * an idea of how you might want to handle incoming votes
- * 
- * @param {string} pollId The ID of the poll that was voted on
- * @param {string} selectedOption Which option the user voted for
- */
-
-// didn't use onNewVote function^

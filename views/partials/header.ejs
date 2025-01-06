@@ -4,7 +4,7 @@
             <li><a href="/">Home</a></li>
             <% if (loggedIn) { %> <!-- Checks if the user is logged in using loggedIn variable -->
                 <li>
-                    <form action="/logout" method="post" style="display: inline;">
+                    <form action="/logout" method="GET">
                         <button type="submit">Logout</button>
                     </form>
                 </li>
